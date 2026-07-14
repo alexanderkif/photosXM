@@ -1,0 +1,17 @@
+@if (photoData(); as data) {
+  <mat-card class="photo-card" appearance="outlined" (click)="onCardClick(data)">
+    <mat-card-header>
+      <mat-card-title>{{ data.author }}</mat-card-title>
+      <mat-card-subtitle>ID: {{ data.id }}</mat-card-subtitle>
+    </mat-card-header>
+    <img mat-card-image [src]="data.download_url" [alt]="'Photo by ' + data.author" />
+  </mat-card>
+} @else {
+  <mat-card class="photo-card skeleton-card" appearance="outlined">
+    <mat-card-header>
+      <div class="skeleton-line title"></div>
+      <div class="skeleton-line subtitle"></div>
+    </mat-card-header>
+    <div class="skeleton-image"></div>
+  </mat-card>
+}
