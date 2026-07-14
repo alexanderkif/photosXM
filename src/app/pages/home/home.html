@@ -1,1 +1,11 @@
-<app-card [photoData]="photoData" />
+<div class="grid-container">
+  @for (photo of photos(); track photo.id) {
+    <app-card [photo]="photo" />
+  }
+</div>
+
+@if (isLoading()) {
+  <mat-progress-spinner mode="indeterminate" class="loading-spinner" />
+}
+
+<div class="scroll-trigger" (appIntersectDirective)="loadNextPage()"></div>

@@ -7,6 +7,12 @@ describe('Home', () => {
   let fixture: ComponentFixture<Home>;
 
   beforeEach(async () => {
+    globalThis.IntersectionObserver = class {
+      observe = vi.fn();
+      unobserve = vi.fn();
+      disconnect = vi.fn();
+    } as any;
+
     await TestBed.configureTestingModule({
       imports: [Home],
     }).compileComponents();

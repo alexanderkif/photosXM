@@ -1,0 +1,31 @@
+import { Directive, ElementRef, EventEmitter, Output } from '@angular/core';
+
+@Directive({
+  selector: '[appIntersectDirective]',
+})
+export class IntersectDirective {
+  @Output() appIntersectDirective = new EventEmitter<void>();
+  private observer!: IntersectionObserver;
+
+  constructor(private el: ElementRef) {}
+
+  ngOnInit() {
+    this.observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          this.appIntersectDirective.emit();
+        }
+      },
+      {
+        root: null,
+        threshold: 0.1,
+      },
+    );
+
+    this.observer.observe(this.el.nativeElement);
+  }
+
+  ngOnDestroy() {
+    this.observer.disconnect();
+  }
+}

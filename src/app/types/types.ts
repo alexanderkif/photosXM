@@ -1,4 +1,4 @@
-export interface PhotoData {
+export interface Photo {
   id: string;
   author: string;
   width: number;

@@ -1,0 +1,19 @@
+.grid-container {
+  margin: 0 auto;
+  padding: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  gap: 1rem;
+  justify-content: center;
+  max-width: 70rem;
+}
+
+.scroll-trigger {
+  height: 20px;
+  margin-bottom: 50px;
+}
+
+.loading-spinner {
+  margin: 20px auto;
+}
