@@ -1,1 +1,7 @@
-<p>favorites works!</p>
+<div class="grid-container">
+  @for (photo of favoritesService.favorites(); track photo.id) {
+    <app-card [photo]="photo" (clickCard)="onCardClick($event)" />
+  } @empty {
+    <p>No favorite photos found.</p>
+  }
+</div>

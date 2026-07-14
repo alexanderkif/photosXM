@@ -1,4 +1,4 @@
-import { Component, input, signal } from '@angular/core';
+import { Component, input, output, signal } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { Photo } from '../../types/types';
 
@@ -10,6 +10,7 @@ import { Photo } from '../../types/types';
 })
 export class Card {
   photo = input<Photo>();
+  clickCard = output<Photo>();
 
   //Emulate real-world API, when getting photos. Loading new photos should have a random delay of 200-300ms.
   isLoaded = signal<boolean>(false);
@@ -25,6 +26,6 @@ export class Card {
   }
 
   onCardClick(photo: Photo): void {
-    console.log('Кликнули по карточке автора:', photo.author, 'с ID:', photo.id);
+    this.clickCard.emit(photo);
   }
 }

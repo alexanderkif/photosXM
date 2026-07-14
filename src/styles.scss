@@ -38,3 +38,11 @@ body {
 }
 
 /* You can add global styles to this file, and also import other style files */
+
+:root {
+  @include mat.progress-spinner-overrides(
+    (
+      active-indicator-color: var(--mat-sys-primary-container),
+    )
+  );
+}

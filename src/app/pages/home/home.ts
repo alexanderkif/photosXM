@@ -6,6 +6,7 @@ import { IntersectDirective } from '../../directives/intersect-directive';
 import { delay } from 'rxjs/operators';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FavoritesService } from '../../services/favorites-service';
 
 @Component({
   selector: 'app-home',
@@ -15,6 +16,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 })
 export class Home {
   private readonly photoService = inject(PhotoService);
+  protected readonly favoritesService = inject(FavoritesService);
   private readonly destroyRef = inject(DestroyRef);
   readonly photos = signal<Photo[]>([]);
   readonly isLoading = signal<boolean>(false);
