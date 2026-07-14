@@ -1,0 +1,40 @@
+.header {
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  height: 64px;
+  background-color: var(--mat-sys-surface-container);
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  padding: 0 16px;
+  gap: 12px;
+
+  button {
+    flex: 1;
+    max-width: 160px;
+    height: 40px;
+    border: none;
+    border-radius: 20px;
+    background: transparent;
+    color: var(--mat-sys-on-surface-variant);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: none;
+    position: relative;
+    transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
+    cursor: pointer;
+
+    &:hover {
+      background-color: rgba(186, 0, 92, 0.08);
+    }
+  }
+
+  .active-link {
+    background-color: var(--mat-sys-primary-container);
+    color: var(--mat-sys-on-primary-container);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+    &::after {
+      display: none;
+    }
+  }
+}

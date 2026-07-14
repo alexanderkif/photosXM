@@ -1,1 +1,14 @@
-<p>header works!</p>
+<mat-toolbar color="default" class="header">
+  <button
+    mat-stroked-button
+    routerLink="/"
+    routerLinkActive="active-link"
+    [routerLinkActiveOptions]="{ exact: true }"
+  >
+    Photos
+  </button>
+
+  <button mat-stroked-button routerLink="/favorites" routerLinkActive="active-link">
+    Favorites
+  </button>
+</mat-toolbar>
