@@ -1,0 +1,38 @@
+.image-wrapper {
+  max-height: 100%;
+  margin: 0 auto;
+  max-width: 800px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  img[mat-card-image] {
+    flex: auto;
+    overflow: hidden;
+    object-fit: cover;
+    margin: 1rem;
+  }
+
+  button {
+    flex-shrink: 0;
+    align-self: center;
+    margin-bottom: 1rem;
+    max-width: 240px;
+    height: 40px;
+    border: none;
+    border-radius: 20px;
+    background: transparent;
+    color: var(--mat-sys-on-surface-variant);
+    background-color: var(--mat-sys-surface-container);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: none;
+    position: relative;
+    transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
+    cursor: pointer;
+
+    &:hover {
+      background-color: var(--mat-sys-primary-container);
+    }
+  }
+}

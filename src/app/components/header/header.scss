@@ -25,7 +25,7 @@
     cursor: pointer;
 
     &:hover {
-      background-color: rgba(186, 0, 92, 0.08);
+      background-color: var(--mat-sys-primary-container);
     }
   }
 
