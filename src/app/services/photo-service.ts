@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Service } from '@angular/core';
-import { Observable, tap } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { Photo } from '../types/types';
 import { IMAGE_WIDTH, IMAGE_HEIGHT, PAGE_LIMIT } from '../types/variables';
 
@@ -15,11 +15,12 @@ export class PhotoService {
       .set('limit', PAGE_LIMIT.toString());
 
     return this.http.get<Photo[]>(this.apiUrl, { params }).pipe(
-      tap((photos) => {
-        photos.forEach((photo) => {
-          photo.download_url = this.optimizeImageUrl(photo.id, IMAGE_WIDTH, IMAGE_HEIGHT);
-        });
-      }),
+      map((photos) =>
+        photos.map((photo) => ({
+          ...photo,
+          download_url: this.optimizeImageUrl(photo.id, IMAGE_WIDTH, IMAGE_HEIGHT),
+        })),
+      ),
     );
   }
 

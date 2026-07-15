@@ -1,4 +1,11 @@
 <div class="image-wrapper">
-  <img mat-card-image src="https://picsum.photos/id/{{ id() }}/800/1200" alt="Big image" />
+  <img
+    mat-card-image
+    [ngSrc]="`https://picsum.photos/id/${id()}/400/600`"
+    priority
+    alt="Big image of photo with ID {{ id() }}"
+    width="400"
+    height="600"
+  />
   <button mat-stroked-button (click)="removeFromFavorites(id())">Remove from favorites</button>
 </div>

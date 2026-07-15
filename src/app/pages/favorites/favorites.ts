@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { FavoritesService } from '../../services/favorites-service';
 import { Card } from '../../components/card/card';
+import { Photo } from '../../types/types';
 
 @Component({
   selector: 'app-favorites',
@@ -11,7 +12,7 @@ import { Card } from '../../components/card/card';
 export class Favorites {
   protected readonly favoritesService = inject(FavoritesService);
 
-  onCardClick(photo: any): void {
+  onCardClick(photo: Photo): void {
     location.href = `/photos/${photo.id}`;
   }
 }

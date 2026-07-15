@@ -4,7 +4,17 @@
       <mat-card-title>{{ photo.author }}</mat-card-title>
       <mat-card-subtitle>ID: {{ photo.id }}</mat-card-subtitle>
     </mat-card-header>
-    <img mat-card-image [src]="photo.download_url" [alt]="'Photo by ' + photo.author" />
+
+    <div class="image-container">
+      <img
+        mat-card-image
+        [ngSrc]="photo.download_url"
+        priority
+        [alt]="'Photo by ' + photo.author"
+        [width]="width"
+        [height]="height"
+      />
+    </div>
   </mat-card>
 } @else {
   <mat-card class="photo-card skeleton-card" appearance="outlined">
@@ -12,6 +22,9 @@
       <div class="skeleton-line title"></div>
       <div class="skeleton-line subtitle"></div>
     </mat-card-header>
-    <div class="skeleton-image"></div>
+
+    <div class="image-container">
+      <div class="skeleton-image"></div>
+    </div>
   </mat-card>
 }
