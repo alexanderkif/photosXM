@@ -4,19 +4,11 @@ import { Photo } from '../../types/types';
 import { By } from '@angular/platform-browser';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { MatCardModule } from '@angular/material/card';
+import { mockPhoto } from '../../types/variables';
 
 describe('Card', () => {
   let component: Card;
   let fixture: ComponentFixture<Card>;
-
-  const mockPhoto: Photo = {
-    id: '1',
-    url: 'https://picsum.photos/200',
-    author: 'Test Author',
-    width: 200,
-    height: 200,
-    download_url: 'https://picsum.photos/200/download',
-  };
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -40,6 +32,32 @@ describe('Card', () => {
     expect(component.photo()).toEqual(mockPhoto);
   });
 
+  it('should render the loaded card content when the image is loaded', async () => {
+    fixture.componentRef.setInput('photo', mockPhoto);
+    component.isLoaded.set(true);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const title = fixture.nativeElement.querySelector('mat-card-title');
+    const subtitle = fixture.nativeElement.querySelector('mat-card-subtitle');
+    const image = fixture.nativeElement.querySelector('img');
+
+    expect(title?.textContent).toContain(mockPhoto.author);
+    expect(subtitle?.textContent).toContain(mockPhoto.id);
+    expect(image).not.toBeNull();
+  });
+
+  it('should render the skeleton state before the image loads', async () => {
+    fixture.componentRef.setInput('photo', mockPhoto);
+    component.isLoaded.set(false);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const skeleton = fixture.nativeElement.querySelector('.skeleton-card');
+    expect(skeleton).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('img')).toBeNull();
+  });
+
   it('should emit the photo via clickCard output when onCardClick is called', () => {
     const emitSpy = vi.fn();
     component.clickCard.subscribe(emitSpy);
@@ -49,32 +67,20 @@ describe('Card', () => {
     expect(emitSpy).toHaveBeenCalledWith(mockPhoto);
   });
 
-  it.skip('should trigger onCardClick when the mat-card element is clicked', async () => {
-    // 1. Arrange: Set the input and wait for the Signal to propagate to the template
+  it('should trigger onCardClick when the mat-card element is clicked', async () => {
     fixture.componentRef.setInput('photo', mockPhoto);
+    component.isLoaded.set(true);
     fixture.detectChanges();
     await fixture.whenStable();
 
-    // 2. Setup Spy on the component instance
     const onCardClickSpy = vi.spyOn(component, 'onCardClick');
-
-    // 3. Act: Find the mat-card element which contains the (click) listener
     const cardDe = fixture.debugElement.query(By.css('mat-card'));
 
-    if (cardDe) {
-      // Trigger the event via Angular's DebugElement system
-      cardDe.triggerEventHandler('click', new MouseEvent('click'));
-    } else {
-      // Fallback: click the host element if mat-card isn't found (unlikely)
-      fixture.nativeElement.click();
-    }
+    cardDe?.triggerEventHandler('click', new MouseEvent('click'));
 
-    // 4. Final detection to ensure the call is processed
     fixture.detectChanges();
     await fixture.whenStable();
 
-    // 5. Assert
-    expect(onCardClickSpy).toHaveBeenCalled();
     expect(onCardClickSpy).toHaveBeenCalledWith(mockPhoto);
   });
 

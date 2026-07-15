@@ -1,10 +1,10 @@
-import { Directive, ElementRef, EventEmitter, Output } from '@angular/core';
+import { Directive, ElementRef, output } from '@angular/core';
 
 @Directive({
   selector: '[appIntersectDirective]',
 })
 export class IntersectDirective {
-  @Output() appIntersectDirective = new EventEmitter<void>();
+  appIntersectDirective = output<void>();
   private observer!: IntersectionObserver;
 
   constructor(private el: ElementRef) {}
@@ -26,6 +26,6 @@ export class IntersectDirective {
   }
 
   ngOnDestroy() {
-    this.observer.disconnect();
+    this.observer?.disconnect();
   }
 }
