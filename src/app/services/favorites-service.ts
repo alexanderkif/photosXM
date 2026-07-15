@@ -13,12 +13,15 @@ export class FavoritesService {
     return this.favoritesSignal().some((item) => item.id === photoId);
   }
 
-  addFavorite(photo: Photo): void {
+  addFavorite(photo: Photo): boolean {
     const current = this.favoritesSignal();
     if (!this.isFavorite(photo.id)) {
       const updated = [...current, photo];
       this.updateState(updated);
+      return true;
     }
+
+    return false;
   }
 
   removeFavorite(photoId: string): void {

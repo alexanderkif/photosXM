@@ -3,7 +3,7 @@ import { HttpClientTestingModule, HttpTestingController } from '@angular/common/
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 
 import { PhotoService } from './photo-service';
-import { mockPhoto } from '../types/variables';
+import { mockPhoto } from '../types/constants';
 
 describe('PhotoService', () => {
   let service: PhotoService;

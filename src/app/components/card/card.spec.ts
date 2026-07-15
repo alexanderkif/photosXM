@@ -4,7 +4,7 @@ import { Photo } from '../../types/types';
 import { By } from '@angular/platform-browser';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { MatCardModule } from '@angular/material/card';
-import { mockPhoto } from '../../types/variables';
+import { mockPhoto } from '../../types/constants';
 
 describe('Card', () => {
   let component: Card;

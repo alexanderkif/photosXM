@@ -1,59 +1,85 @@
 # GalleryTemplate
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.0.6.
+A small Angular photo gallery app that emulates real-world API latency for loading photos.
+
+## Assignment requirements
+
+This implementation follows the project requirements:
+
+- Use Angular Router module
+- Use the latest Angular and SCSS instead of CSS
+- Use Angular Material components
+- Implement infinite scroll manually without external libraries
+- Don’t use any backend server to retain state
+- Add unit tests
+
+## Prerequisites
+
+- Node.js (compatible with npm 11.x)
+- Angular CLI 22.x
+
+## Installation
+
+Install dependencies in the project root:
+
+```bash
+npm install
+```
 
 ## Development server
 
-To start a local development server, run:
+Start the development server:
 
 ```bash
-ng serve
+npm start
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Open your browser at `http://localhost:4200/`.
 
-## Code scaffolding
+The app supports live reload and will refresh automatically when source files change.
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Build
+
+Build the production bundle:
 
 ```bash
-ng generate component component-name
+npm run build
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+The compiled output is written to the `dist/` folder.
+
+## Tests
+
+Run unit tests:
 
 ```bash
-ng generate --help
+npm test
 ```
 
-## Building
-
-To build the project run:
+Run unit tests with coverage:
 
 ```bash
-ng build
+npm run test:coverage
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+Run Vitest UI with coverage:
 
 ```bash
-ng test
+npm run test:ui
 ```
 
-## Running end-to-end tests
+## Loading delay emulation
 
-For end-to-end (e2e) testing, run:
+The app intentionally simulates network/API latency for photo loading:
 
-```bash
-ng e2e
-```
+- In `src/app/components/card/card.ts`, the photo card uses a random loading delay:
+  - `Math.random() * 800 + 200` → random delay between 200 and 1000 ms.
+- In `src/app/pages/home/home.ts`, the photo request is delayed for visual loading state:
+  - `delay(1000)` is applied to emulate network delay and show the loader.
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+## Notes
 
-## Additional Resources
+- The project was generated with Angular CLI 22.0.6.
+- The app uses Vitest for unit testing.
+- For additional Angular CLI documentation, visit https://angular.dev/tools/cli.
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.

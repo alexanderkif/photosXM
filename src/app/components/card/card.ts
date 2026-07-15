@@ -2,7 +2,7 @@ import { Component, input, output, signal } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { Photo } from '../../types/types';
-import { IMAGE_WIDTH, IMAGE_HEIGHT } from '../../types/variables';
+import { IMAGE_WIDTH, IMAGE_HEIGHT } from '../../types/constants';
 
 @Component({
   selector: 'app-card',

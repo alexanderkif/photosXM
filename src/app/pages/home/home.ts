@@ -5,12 +5,13 @@ import { PhotoService } from '../../services/photo-service';
 import { IntersectDirective } from '../../directives/intersect-directive';
 import { delay } from 'rxjs/operators';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FavoritesService } from '../../services/favorites-service';
 
 @Component({
   selector: 'app-home',
-  imports: [Card, MatProgressSpinnerModule, IntersectDirective],
+  imports: [Card, MatProgressSpinnerModule, MatSnackBarModule, IntersectDirective],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })
@@ -18,6 +19,7 @@ export class Home {
   private readonly photoService = inject(PhotoService);
   protected readonly favoritesService = inject(FavoritesService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly snackBar = inject(MatSnackBar);
   readonly photos = signal<Photo[]>([]);
   readonly isLoading = signal<boolean>(false);
 
@@ -25,6 +27,21 @@ export class Home {
 
   ngOnInit() {
     this.loadNextPage();
+  }
+
+  onCardClick(photo: Photo): void {
+    const wasAdded = this.favoritesService.addFavorite(photo);
+
+    this.snackBar.open(
+      wasAdded ? 'Photo added to favorites.' : 'This photo was already added to favorites.',
+      'Close',
+      {
+        duration: 2500,
+        horizontalPosition: 'center',
+        verticalPosition: 'bottom',
+        panelClass: wasAdded ? ['snackbar-success'] : ['snackbar-error'],
+      },
+    );
   }
 
   loadNextPage() {

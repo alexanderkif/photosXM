@@ -1,6 +1,6 @@
 <div class="grid-container">
   @for (photo of photos(); track photo.id) {
-    <app-card [photo]="photo" (clickCard)="favoritesService.addFavorite($event)" />
+    <app-card [photo]="photo" (clickCard)="onCardClick($event)" />
   }
 </div>
 

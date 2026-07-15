@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { FavoritesService } from './favorites-service';
-import { mockPhoto } from '../types/variables';
+import { mockPhoto } from '../types/constants';
 
 describe('FavoritesService', () => {
   let service: FavoritesService;
@@ -25,9 +25,9 @@ describe('FavoritesService', () => {
     expect(localStorage.getItem('favorite_photos')).toBe(JSON.stringify([mockPhoto]));
   });
 
-  it('should not add duplicates', () => {
-    service.addFavorite(mockPhoto);
-    service.addFavorite(mockPhoto);
+  it('should return true when adding a new favorite and false for duplicates', () => {
+    expect(service.addFavorite(mockPhoto)).toBe(true);
+    expect(service.addFavorite(mockPhoto)).toBe(false);
 
     expect(service.favorites()).toHaveLength(1);
   });

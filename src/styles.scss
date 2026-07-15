@@ -5,6 +5,12 @@
 // custom components at https://material.angular.dev/guide/theming
 @use '@angular/material' as mat;
 
+@mixin snackbar-variant($container-color, $text-color, $button-color) {
+  --mdc-snackbar-container-color: #{$container-color};
+  --mdc-snackbar-supporting-text-color: #{$text-color};
+  --mdc-snackbar-action-color: #{$button-color};
+}
+
 html {
   height: 100%;
   @include mat.theme(
@@ -45,4 +51,38 @@ body {
       active-indicator-color: var(--mat-sys-primary-container),
     )
   );
+}
+
+.snackbar-success {
+  @include snackbar-variant(#f8e1ea, #7b1f45, #7b1f45);
+}
+
+.snackbar-success .mdc-snackbar__surface,
+.snackbar-success.mat-mdc-snack-bar-container {
+  background-color: var(--mdc-snackbar-container-color) !important;
+  color: var(--mdc-snackbar-supporting-text-color) !important;
+  border: 1px solid rgba(123, 31, 69, 0.16);
+  box-shadow: 0 6px 18px rgba(123, 31, 69, 0.12);
+}
+
+.snackbar-success .mdc-button__label,
+.snackbar-success .mat-mdc-snack-bar-action {
+  color: var(--mdc-snackbar-action-color) !important;
+}
+
+.snackbar-error {
+  @include snackbar-variant(#b42318, #fde7e9, #b42318);
+}
+
+.snackbar-error .mdc-snackbar__surface,
+.snackbar-error.mat-mdc-snack-bar-container {
+  background-color: var(--mdc-snackbar-container-color) !important;
+  color: var(--mdc-snackbar-supporting-text-color) !important;
+  border: 1px solid rgba(180, 35, 24, 0.2);
+  box-shadow: 0 6px 18px rgba(180, 35, 24, 0.16);
+}
+
+.snackbar-error .mdc-button__label,
+.snackbar-error .mat-mdc-snack-bar-action {
+  color: var(--mdc-snackbar-action-color) !important;
 }

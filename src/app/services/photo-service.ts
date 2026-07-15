@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Service } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { Photo } from '../types/types';
-import { IMAGE_WIDTH, IMAGE_HEIGHT, PAGE_LIMIT } from '../types/variables';
+import { IMAGE_WIDTH, IMAGE_HEIGHT, PAGE_LIMIT } from '../types/constants';
 
 @Service()
 export class PhotoService {

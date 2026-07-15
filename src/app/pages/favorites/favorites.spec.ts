@@ -1,9 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi, afterEach } from 'vitest';
+import { By } from '@angular/platform-browser';
 
 import { Favorites } from './favorites';
-import { mockPhoto } from '../../types/variables';
 import { FavoritesService } from '../../services/favorites-service';
+import { mockPhoto } from '../../types/constants';
+import { Card } from '../../components/card/card';
 
 describe('Favorites', () => {
   let component: Favorites;
@@ -12,12 +14,15 @@ describe('Favorites', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [Favorites],
-      providers: [FavoritesService],
+      providers: [{ provide: FavoritesService, useValue: { favorites: () => [] } }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Favorites);
     component = fixture.componentInstance;
-    await fixture.whenStable();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('should create', () => {
@@ -30,14 +35,26 @@ describe('Favorites', () => {
     expect(fixture.nativeElement.textContent).toContain('No favorite photos found.');
   });
 
-  it('should render favorite cards and handle click callback', () => {
-    const favoritesService = TestBed.inject(FavoritesService);
-    favoritesService.addFavorite(mockPhoto);
+  it('should navigate to photo detail when card emits clickCard', () => {
+    const favoritesService = TestBed.inject(FavoritesService) as any;
+    favoritesService.favorites = () => [mockPhoto];
+
+    const originalLocation = window.location;
+    // Replace location to avoid real navigation
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    (window as any).location = { href: '' };
+
     fixture.detectChanges();
 
-    const card = fixture.nativeElement.querySelector('app-card');
-    expect(card).not.toBeNull();
+    const cardDe = fixture.debugElement.query(By.directive(Card));
+    expect(cardDe).toBeTruthy();
 
-    expect(() => component.onCardClick(mockPhoto)).not.toThrow();
+    cardDe.triggerEventHandler('clickCard', mockPhoto);
+    fixture.detectChanges();
+
+    expect((window as any).location.href).toContain(`/photos/${mockPhoto.id}`);
+
+    // restore location
+    (window as any).location = originalLocation;
   });
 });
