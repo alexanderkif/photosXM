@@ -1,18 +1,21 @@
 import { Component, inject } from '@angular/core';
 import { FavoritesService } from '../../services/favorites-service';
-import { Card } from '../../components/card/card';
 import { Photo } from '../../types/types';
+import { Router } from '@angular/router';
+import { PhotoList } from '../../components/photo-list/photo-list';
 
 @Component({
   selector: 'app-favorites',
-  imports: [Card],
+  imports: [PhotoList],
   templateUrl: './favorites.html',
   styleUrl: './favorites.scss',
 })
 export class Favorites {
   protected readonly favoritesService = inject(FavoritesService);
+  private router = inject(Router);
+  protected readonly emptyLabel = 'No favorite photos found.';
 
   onCardClick(photo: Photo): void {
-    location.href = `/photos/${photo.id}`;
+    this.router.navigate([`/photos/${photo.id}`]);
   }
 }

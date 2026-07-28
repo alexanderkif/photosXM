@@ -1,3 +1,4 @@
+import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -6,11 +7,26 @@ import { mockPhoto } from '../types/constants';
 
 describe('FavoritesService', () => {
   let service: FavoritesService;
+  let appRef: ApplicationRef;
+
+  // Хелпер для современной очистки очереди эффектов Angular
+  const flushAngularEffects = () => {
+    appRef.tick();
+  };
 
   beforeEach(() => {
     localStorage.clear();
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      providers: [FavoritesService]
+    });
+    
+    // Инжектим ссылку на приложение для управления жизненным циклом эффектов
+    appRef = TestBed.inject(ApplicationRef);
     service = TestBed.inject(FavoritesService);
+  });
+
+  afterEach(() => {
+    TestBed.resetTestingModule();
   });
 
   it('should be created', () => {
@@ -19,6 +35,9 @@ describe('FavoritesService', () => {
 
   it('should add a favorite and persist it to storage', () => {
     service.addFavorite(mockPhoto);
+
+    // Современный способ запустить эффект синхронизации
+    flushAngularEffects();
 
     expect(service.isFavorite(mockPhoto.id)).toBe(true);
     expect(service.favorites()).toEqual([mockPhoto]);
@@ -34,7 +53,10 @@ describe('FavoritesService', () => {
 
   it('should remove a favorite and clear storage when empty', () => {
     service.addFavorite(mockPhoto);
+    flushAngularEffects(); 
+
     service.removeFavorite(mockPhoto.id);
+    flushAngularEffects(); 
 
     expect(service.isFavorite(mockPhoto.id)).toBe(false);
     expect(service.favorites()).toEqual([]);
@@ -45,7 +67,12 @@ describe('FavoritesService', () => {
     const savedPhoto = { ...mockPhoto, id: '2' };
     localStorage.setItem('favorite_photos', JSON.stringify([savedPhoto]));
 
-    const initializedService = new FavoritesService();
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [FavoritesService]
+    });
+    
+    const initializedService = TestBed.inject(FavoritesService);
 
     expect(initializedService.favorites()).toEqual([savedPhoto]);
   });

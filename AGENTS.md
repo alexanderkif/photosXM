@@ -15,6 +15,7 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 - Use signals for state management
 - Implement lazy loading for feature routes
 - Do NOT use the `@HostBinding` and `@HostListener` decorators. Put host bindings inside the `host` object of the `@Component` or `@Directive` decorator instead
+- Prefer Angular 22+ render hooks (`afterNextRender`, `afterEveryRender`) instead of old lifecycle hooks like `OnInit` for standalone directive/component initialization.
 - Use `NgOptimizedImage` for all static images.
   - `NgOptimizedImage` does not work for inline base64 images.
 
@@ -55,3 +56,9 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 - Use the `providedIn: 'root'` option for singleton services
 - Prefer the `@Service` decorator over `@Injectable({providedIn: 'root'})` for new singleton services (Angular v22+)
 - Use the `inject()` function instead of constructor injection
+
+## Test execution
+
+- Use `npm test` or `npx ng test` to run unit tests in this Angular 22 zoneless app.
+- Do not run `npx vitest` directly; Angular CLI initializes the test environment and runner.
+- Use `npm run test:coverage` for coverage and `npm run test:ui` for Vitest UI.

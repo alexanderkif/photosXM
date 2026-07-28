@@ -1,11 +1,17 @@
-<div class="grid-container">
-  @for (photo of photos(); track photo.id) {
-    <app-card [photo]="photo" (clickCard)="onCardClick($event)" />
-  }
-</div>
+<app-photo-list [photos]="photoService.photos()" (onCardClick)="onCardClick($event)" />
 
-@if (isLoading()) {
+<!-- Emulate network delay for visual testing purposes - remove photoService.isLoadingDelayed() -->
+@if (photoService.resource.isLoading() || photoService.isLoadingDelayed()) {
   <mat-progress-spinner mode="indeterminate" class="loading-spinner" />
 }
 
-<div class="scroll-trigger" (appIntersectDirective)="loadNextPage()"></div>
+@if (photoService.resource.error()) {
+  <div>Something went wrong.</div>
+  <div class="error">{{ photoService.resource.error()?.message }}</div>
+}
+
+<div
+  appIntersectDirective
+  [isLoading]="photoService.isLoadingDelayed()"
+  (appIntersectDirective)="photoService.loadNextPage()"
+></div>

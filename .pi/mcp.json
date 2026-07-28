@@ -3,6 +3,11 @@
     "angular-cli": {
       "command": "npx",
       "args": ["-y", "@angular/cli", "mcp"]
+    },
+    "vitest": {
+      "command": "npx",
+      "args": ["-y", "@djankies/vitest-mcp"],
+      "directTools": true
     }
   }
 }

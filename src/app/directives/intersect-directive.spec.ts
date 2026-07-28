@@ -38,14 +38,15 @@ describe('IntersectDirective', () => {
     expect(directive).toBeTruthy();
   });
 
-  it('should initialize observer and observe the element', () => {
+  const waitForNextRender = async () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+  it('should initialize observer and observe the element', async () => {
     const mockElementRef = {
       nativeElement: document.createElement('div'),
     } as ElementRef<HTMLElement>;
 
     const directive = TestBed.runInInjectionContext(() => new IntersectDirective(mockElementRef));
-
-    directive.ngOnInit();
+    await waitForNextRender();
 
     expect(MockIntersectionObserver.instances).toHaveLength(1);
     expect(MockIntersectionObserver.instances[0].observe).toHaveBeenCalledWith(
@@ -53,7 +54,7 @@ describe('IntersectDirective', () => {
     );
   });
 
-  it('should emit when the element becomes intersecting and disconnect on destroy', () => {
+  it('should emit when the element becomes intersecting and disconnect on destroy', async () => {
     const mockElementRef = {
       nativeElement: document.createElement('div'),
     } as ElementRef<HTMLElement>;
@@ -62,7 +63,7 @@ describe('IntersectDirective', () => {
     const emitSpy = vi.fn();
     directive.appIntersectDirective.subscribe(emitSpy);
 
-    directive.ngOnInit();
+    await waitForNextRender();
     const observer = MockIntersectionObserver.instances[0];
 
     observer.callback(

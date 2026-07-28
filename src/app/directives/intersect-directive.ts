@@ -1,23 +1,47 @@
-import { Directive, ElementRef, output } from '@angular/core';
+import {
+  Directive,
+  ElementRef,
+  output,
+  afterNextRender,
+  afterEveryRender,
+  OnDestroy,
+  input,
+} from '@angular/core';
 
 @Directive({
   selector: '[appIntersectDirective]',
 })
-export class IntersectDirective {
+export class IntersectDirective implements OnDestroy {
+  isLoading = input<boolean>(false);
   appIntersectDirective = output<void>();
+
   private observer!: IntersectionObserver;
+  private isCurrentlyIntersecting = false;
 
-  constructor(private el: ElementRef) {}
+  constructor(private el: ElementRef<HTMLElement>) {
+    afterNextRender(() => {
+      this.initIntersectionObserver();
+    });
 
-  ngOnInit() {
+    afterEveryRender(() => {
+      if (this.isCurrentlyIntersecting && !this.isLoading()) {
+        this.appIntersectDirective.emit();
+      }
+    });
+  }
+
+  private initIntersectionObserver() {
     this.observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
+        this.isCurrentlyIntersecting = entry.isIntersecting;
+
+        if (entry.isIntersecting && !this.isLoading()) {
           this.appIntersectDirective.emit();
         }
       },
       {
         root: null,
+        rootMargin: '0px',
         threshold: 0.1,
       },
     );

@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi, afterEach } from 'vitest';
 import { By } from '@angular/platform-browser';
+import { Router } from '@angular/router';
 
 import { Favorites } from './favorites';
 import { FavoritesService } from '../../services/favorites-service';
@@ -12,9 +13,16 @@ describe('Favorites', () => {
   let fixture: ComponentFixture<Favorites>;
 
   beforeEach(async () => {
+    const routerMock = {
+      navigate: vi.fn(),
+    };
+
     await TestBed.configureTestingModule({
       imports: [Favorites],
-      providers: [{ provide: FavoritesService, useValue: { favorites: () => [] } }],
+      providers: [
+        { provide: FavoritesService, useValue: { favorites: () => [] } },
+        { provide: Router, useValue: routerMock },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Favorites);
@@ -37,12 +45,8 @@ describe('Favorites', () => {
 
   it('should navigate to photo detail when card emits clickCard', () => {
     const favoritesService = TestBed.inject(FavoritesService) as any;
+    const router = TestBed.inject(Router) as any;
     favoritesService.favorites = () => [mockPhoto];
-
-    const originalLocation = window.location;
-    // Replace location to avoid real navigation
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    (window as any).location = { href: '' };
 
     fixture.detectChanges();
 
@@ -52,9 +56,6 @@ describe('Favorites', () => {
     cardDe.triggerEventHandler('clickCard', mockPhoto);
     fixture.detectChanges();
 
-    expect((window as any).location.href).toContain(`/photos/${mockPhoto.id}`);
-
-    // restore location
-    (window as any).location = originalLocation;
+    expect(router.navigate).toHaveBeenCalledWith([`/photos/${mockPhoto.id}`]);
   });
 });

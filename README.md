@@ -68,6 +68,8 @@ Run Vitest UI with coverage:
 npm run test:ui
 ```
 
+> Note: this Angular 22 zoneless project uses Angular CLI's `ng test` runner. The CLI initializes the Angular test environment and selects Vitest automatically. Do not invoke `npx vitest` directly.
+
 ## Loading delay emulation
 
 The app intentionally simulates network/API latency for photo loading:

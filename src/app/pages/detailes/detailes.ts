@@ -3,6 +3,7 @@ import { NgOptimizedImage } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { FavoritesService } from '../../services/favorites-service';
 import { MatButtonModule } from '@angular/material/button';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-detailes',
@@ -13,9 +14,10 @@ import { MatButtonModule } from '@angular/material/button';
 export class Detailes {
   protected readonly favoritesService = inject(FavoritesService);
   protected readonly id = input<string>('');
+  private router = inject(Router);
 
   removeFromFavorites(photoId: string): void {
     this.favoritesService.removeFavorite(photoId);
-    location.href = '/favorites';
+    this.router.navigate(['/favorites']);
   }
 }

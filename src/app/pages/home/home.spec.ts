@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { of, throwError } from 'rxjs';
+import { signal } from '@angular/core';
+import { throwError } from 'rxjs';
 import { By } from '@angular/platform-browser';
 
 import { Home } from './home';
@@ -12,13 +13,20 @@ import { mockPhoto } from '../../types/constants';
 describe('Home', () => {
   let component: Home;
   let fixture: ComponentFixture<Home>;
-  let getPhotosSpy: ReturnType<typeof vi.fn>;
+  let mockPhotos: ReturnType<typeof signal>;
+  let mockIsLoading: ReturnType<typeof signal>;
+  let mockError: ReturnType<typeof signal>;
+  let loadNextPageSpy: ReturnType<typeof vi.fn>;
   let addFavoriteSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     vi.useFakeTimers();
-    getPhotosSpy = vi.fn();
+    mockPhotos = signal([]);
+    mockIsLoading = signal(false);
+    mockError = signal<Error | null>(null);
+    loadNextPageSpy = vi.fn();
     addFavoriteSpy = vi.fn();
+
     globalThis.IntersectionObserver = class {
       observe = vi.fn();
       unobserve = vi.fn();
@@ -28,7 +36,18 @@ describe('Home', () => {
     await TestBed.configureTestingModule({
       imports: [Home],
       providers: [
-        { provide: PhotoService, useValue: { getPhotos: getPhotosSpy } },
+        {
+          provide: PhotoService,
+          useValue: {
+            photos: mockPhotos,
+            resource: {
+              isLoading: mockIsLoading,
+              error: mockError,
+            },
+            isLoadingDelayed: signal(false),
+            loadNextPage: loadNextPageSpy,
+          },
+        },
         { provide: FavoritesService, useValue: { addFavorite: addFavoriteSpy } },
       ],
     }).compileComponents();
@@ -47,28 +66,24 @@ describe('Home', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should load photos on init and append them to the list', () => {
-    getPhotosSpy.mockReturnValue(of([mockPhoto]));
+  it('should display photos after they are available', () => {
+    mockPhotos.set([mockPhoto]);
 
     fixture.detectChanges();
-    vi.advanceTimersByTime(1000);
-    fixture.detectChanges();
 
-    expect(getPhotosSpy).toHaveBeenCalledWith(1);
-    expect(component.photos()).toEqual([mockPhoto]);
-    expect(component.isLoading()).toBe(false);
+    const photoService = (component as any).photoService as PhotoService;
+    expect(photoService.photos()).toEqual([mockPhoto]);
+    expect(photoService.resource.isLoading()).toBe(false);
   });
 
-  it('should stop loading when the request fails', () => {
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    getPhotosSpy.mockReturnValue(throwError(() => new Error('Boom')));
+  it('should show error state when the resource fails', () => {
+    mockError.set(new Error('Boom'));
 
     fixture.detectChanges();
-    vi.advanceTimersByTime(1000);
-    fixture.detectChanges();
 
-    expect(component.isLoading()).toBe(false);
-    expect(consoleErrorSpy).toHaveBeenCalled();
+    const photoService = (component as any).photoService as PhotoService;
+    expect(photoService.resource.isLoading()).toBe(false);
+    expect(photoService.resource.error()?.message).toBe('Boom');
   });
 
   it('should open a success snackbar when a photo is added to favorites', () => {
@@ -109,25 +124,20 @@ describe('Home', () => {
     );
   });
 
-  it('should not request another page while a load is already in progress', () => {
-    getPhotosSpy.mockReturnValue(of([mockPhoto]));
+  it('should delegate load next page to the photo service', () => {
+    const photoService = (component as any).photoService as PhotoService;
+    photoService.loadNextPage();
+    photoService.loadNextPage();
 
-    component.loadNextPage();
-    component.loadNextPage();
-    vi.advanceTimersByTime(1000);
-
-    expect(getPhotosSpy).toHaveBeenCalledTimes(1);
+    expect(loadNextPageSpy).toHaveBeenCalledTimes(2);
   });
-
   it('should call onCardClick when app-card emits clickCard', () => {
-    getPhotosSpy.mockReturnValue(of([mockPhoto]));
     addFavoriteSpy.mockReturnValue(true);
+    mockPhotos.set([mockPhoto]);
     const snackBarOpenSpy = vi
       .spyOn(component['snackBar'], 'open')
       .mockImplementation(() => undefined as never);
 
-    fixture.detectChanges();
-    vi.advanceTimersByTime(1000);
     fixture.detectChanges();
 
     const cardDe = fixture.debugElement.query(By.directive(Card));
@@ -141,18 +151,18 @@ describe('Home', () => {
   });
 
   it('should load next page when scroll-trigger emits appIntersectDirective', () => {
-    getPhotosSpy.mockReturnValue(of([mockPhoto]));
+    mockPhotos.set([mockPhoto]);
 
     fixture.detectChanges();
 
-    const triggerDe = fixture.debugElement.query(By.css('.scroll-trigger'));
+    const triggerDe = fixture.debugElement.query(By.css('div[appIntersectDirective]'));
     expect(triggerDe).toBeTruthy();
 
     triggerDe.triggerEventHandler('appIntersectDirective', null);
-    vi.advanceTimersByTime(1000);
     fixture.detectChanges();
 
-    expect(getPhotosSpy).toHaveBeenCalledWith(1);
-    expect(component.photos()).toEqual([mockPhoto]);
+    expect(loadNextPageSpy).toHaveBeenCalled();
+    const photoService = (component as any).photoService as PhotoService;
+    expect(photoService.photos()).toEqual([mockPhoto]);
   });
 });

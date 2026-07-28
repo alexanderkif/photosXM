@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Detailes } from './detailes';
 import { FavoritesService } from '../../services/favorites-service';
 import { By } from '@angular/platform-browser';
+import { Router } from '@angular/router';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
 describe('Detailes', () => {
@@ -15,12 +16,16 @@ describe('Detailes', () => {
       removeFavorite: vi.fn(),
     };
 
-    // Mock for location.href to prevent page reloads during tests
-    vi.stubGlobal('location', { href: '' });
+    const routerMock = {
+      navigate: vi.fn(),
+    };
 
     await TestBed.configureTestingModule({
       imports: [Detailes],
-      providers: [{ provide: FavoritesService, useValue: favoritesServiceMock }],
+      providers: [
+        { provide: FavoritesService, useValue: favoritesServiceMock },
+        { provide: Router, useValue: routerMock },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Detailes);
@@ -51,12 +56,13 @@ describe('Detailes', () => {
 
   it('should call favoritesService.removeFavorite and redirect when removeFromFavorites is called', () => {
     const testId = '99';
+    const router = TestBed.inject(Router) as any;
 
     component.removeFromFavorites(testId);
 
     expect(favoritesServiceMock.removeFavorite).toHaveBeenCalledWith(testId);
     expect(favoritesServiceMock.removeFavorite).toHaveBeenCalledTimes(1);
-    expect(window.location.href).toBe('/favorites');
+    expect(router.navigate).toHaveBeenCalledWith(['/favorites']);
   });
 
   it('should trigger removeFromFavorites when the remove button is clicked', async () => {

@@ -1,0 +1,7 @@
+<div class="grid-container">
+  @for (photo of photos(); track photo.id) {
+    <app-card [photo]="photo" (clickCard)="onCardClick.emit($event)" />
+  } @empty {
+    <p>{{ emptyLabel() }}</p>
+  }
+</div>
