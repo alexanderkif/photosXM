@@ -62,3 +62,13 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 - Use `npm test` or `npx ng test` to run unit tests in this Angular 22 zoneless app.
 - Do not run `npx vitest` directly; Angular CLI initializes the test environment and runner.
 - Use `npm run test:coverage` for coverage and `npm run test:ui` for Vitest UI.
+
+## Agent skills
+
+### Issue tracker
+
+Issues tracked in GitHub Issues of this repo. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Single-context layout — one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.

@@ -4,6 +4,7 @@ import { provideRouter } from '@angular/router';
 
 describe('App', () => {
   beforeEach(async () => {
+    TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       imports: [App],
       providers: [provideRouter([])],

@@ -1,8 +1,9 @@
-import { Component, input, output, signal } from '@angular/core';
+import { Component, input, output, signal, inject, afterNextRender } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { Photo } from '../../types/types';
-import { IMAGE_WIDTH, IMAGE_HEIGHT } from '../../types/constants';
+import { IMAGE_WIDTH_PX, IMAGE_HEIGHT_PX } from '../../types/constants';
+import { SettingsService } from '../../services/settings-service';
 
 @Component({
   selector: 'app-card',
@@ -17,20 +18,20 @@ import { IMAGE_WIDTH, IMAGE_HEIGHT } from '../../types/constants';
 export class Card {
   photo = input<Photo>();
   clickCard = output<Photo>();
-  width = IMAGE_WIDTH;
-  height = IMAGE_HEIGHT;
+  width = IMAGE_WIDTH_PX;
+  height = IMAGE_HEIGHT_PX;
 
-  //Emulate real-world API, when getting photos. Loading new photos should have a random delay of 200-300ms.
   isLoaded = signal<boolean>(false);
+  private readonly settings = inject(SettingsService);
 
-  ngOnInit() {
-    // Simulate API delay
-    setTimeout(
-      () => {
-        this.isLoaded.set(true);
-      },
-      Math.random() * 800 + 200, // Random delay between 200-1000ms
-    );
+  constructor() {
+    afterNextRender(() => {
+      // Simulate API delay
+      setTimeout(
+        () => this.isLoaded.set(true),
+        Math.random() * this.settings.delayMs(), // Random delay between 0 and delayMs
+      );
+    });
   }
 
   onCardClick(photo: Photo): void {

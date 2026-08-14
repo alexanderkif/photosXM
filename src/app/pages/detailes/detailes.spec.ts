@@ -11,7 +11,7 @@ describe('Detailes', () => {
   let favoritesServiceMock: any;
 
   beforeEach(async () => {
-    // Mock for FavoritesService
+    TestBed.resetTestingModule();
     favoritesServiceMock = {
       removeFavorite: vi.fn(),
     };
@@ -48,8 +48,6 @@ describe('Detailes', () => {
 
     const img = fixture.debugElement.query(By.css('img')).nativeElement;
 
-    // NgOptimizedImage uses ngSrc, in DOM it renders as src
-    // We check if the rendered URL contains our ID
     expect(img.getAttribute('src')).toContain(`/id/${testId}/400/600`);
     expect(img.getAttribute('alt')).toBe(`Big image of photo with ID ${testId}`);
   });
@@ -88,7 +86,6 @@ describe('Detailes', () => {
 
     expect(img.getAttribute('width')).toBe('400');
     expect(img.getAttribute('height')).toBe('600');
-    // fetchpriority="high" is what "priority" attribute in NgOptimizedImage renders to
     expect(img.getAttribute('fetchpriority')).toBe('high');
   });
 });

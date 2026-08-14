@@ -1,17 +1,19 @@
 <app-photo-list [photos]="photoService.photos()" (onCardClick)="onCardClick($event)" />
 
 <!-- Emulate network delay for visual testing purposes - remove photoService.isLoadingDelayed() -->
-@if (photoService.resource.isLoading() || photoService.isLoadingDelayed()) {
+@if (photoService.isLoadingDelayed()) {
   <mat-progress-spinner mode="indeterminate" class="loading-spinner" />
 }
 
 @if (photoService.resource.error()) {
-  <div>Something went wrong.</div>
-  <div class="error">{{ photoService.resource.error()?.message }}</div>
+  <div class="error-state">
+    <p class="error-title">Something went wrong.</p>
+    <p class="error-message">{{ photoService.resource.error()?.message ?? 'Unknown error.' }}</p>
+  </div>
 }
 
 <div
   appIntersectDirective
   [isLoading]="photoService.isLoadingDelayed()"
-  (appIntersectDirective)="photoService.loadNextPage()"
+  (load)="photoService.loadNextPage()"
 ></div>

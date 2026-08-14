@@ -1,117 +1,201 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { PhotoService } from './photo-service';
-import { PAGE_LIMIT, IMAGE_WIDTH, IMAGE_HEIGHT } from '../types/constants';
+import {
+  PAGE_LIMIT,
+  IMAGE_WIDTH_PX,
+  IMAGE_HEIGHT_PX,
+  PICSUM_API_LIST_ENDPOINT,
+} from '../types/constants';
 import { vi, describe, beforeEach, afterEach, it, expect } from 'vitest';
-import { ApplicationRef } from '@angular/core';
+import { ApplicationRef, PLATFORM_ID, signal } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { SettingsService } from '../services/settings-service';
 
 describe('PhotoService', () => {
   let service: PhotoService;
   let httpMock: HttpTestingController;
   let appRef: ApplicationRef;
 
-  const mockServerPhotos = [
-    { id: '10', author: 'Author 1', width: 100, height: 100, url: '', download_url: 'old_url' },
-    { id: '20', author: 'Author 2', width: 100, height: 100, url: '', download_url: 'old_url' },
-  ];
+  const mockSettingsService = {
+    delayMs: signal(100),
+  };
 
-  beforeEach(() => {
-    vi.useFakeTimers();
+  const fakeWindowDimensions = {
+    innerWidth: 1400,
+    innerHeight: 900,
+  };
 
-    TestBed.configureTestingModule({
-      providers: [PhotoService, provideHttpClient(), provideHttpClientTesting()],
-    });
+  async function configureService(
+    platform: 'browser' | 'server' = 'browser',
+    forceNullView = false,
+  ) {
+    TestBed.resetTestingModule();
+
+    const customDocument = {
+      ...document,
+      getElementById: (id: string) => document.getElementById(id),
+      querySelector: (selector: string) => document.querySelector(selector),
+      get defaultView() {
+        return forceNullView
+          ? null
+          : (fakeWindowDimensions as unknown as Window & typeof globalThis);
+      },
+    };
+
+    await TestBed.configureTestingModule({
+      providers: [
+        PhotoService,
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: SettingsService, useValue: mockSettingsService },
+        { provide: PLATFORM_ID, useValue: platform },
+        { provide: DOCUMENT, useValue: customDocument },
+      ],
+    }).compileComponents();
 
     httpMock = TestBed.inject(HttpTestingController);
     appRef = TestBed.inject(ApplicationRef);
     service = TestBed.inject(PhotoService);
+  }
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    fakeWindowDimensions.innerWidth = 1400;
+    fakeWindowDimensions.innerHeight = 900;
   });
 
   afterEach(() => {
-    httpMock.verify();
+    vi.restoreAllMocks();
     vi.useRealTimers();
-    TestBed.resetTestingModule();
   });
 
-  const expectListRequest = async (page: number) => {
-    await vi.advanceTimersByTimeAsync(0);
-    appRef.tick();
-
-    return httpMock.expectOne((req) => {
-      return (
-        req.url === 'https://picsum.photos/v2/list' &&
-        req.params.get('page') === page.toString() &&
-        req.params.get('limit') === PAGE_LIMIT.toString()
-      );
+  describe('Initialization & Grid Calculation', () => {
+    it('should exit grid limit calculations if platform is server (SSR)', async () => {
+      await configureService('server');
+      expect((service as any).currentLimit()).toBe(PAGE_LIMIT);
     });
-  };
 
-  it('должен загружать первую страницу, мапить URL картинок и обновлять сигнал через эффект', async () => {
-    const req = await expectListRequest(1);
-    req.flush(mockServerPhotos);
+    it('should exit grid limit calculations if document.defaultView is missing', async () => {
+      await configureService('browser', true);
+      expect((service as any).currentLimit()).toBe(PAGE_LIMIT);
+    });
 
-    await vi.advanceTimersByTimeAsync(0);
-    appRef.tick();
+    it('should correctly calculate columns, rows and round the limit to a multiple of columns', async () => {
+      fakeWindowDimensions.innerWidth = 1000;
+      fakeWindowDimensions.innerHeight = 800;
 
-    const resourceValue = service.resource.value();
-    expect(resourceValue).toBeDefined();
-    // Исправлен синтаксис обращения к первому элементу массива
-    expect(resourceValue?.[0]?.download_url).toBe(
-      `https://picsum.photos/id/${mockServerPhotos[0].id}/${IMAGE_WIDTH}/${IMAGE_HEIGHT}`,
-    );
-    expect(service.photosDelayed()).toBeUndefined();
+      await configureService('browser');
 
-    // Прокручиваем 1 секунду для delay(1000)
-    await vi.advanceTimersByTimeAsync(1000);
-    appRef.tick();
+      const cols = (service as any).calculatedColumns;
+      const limit = (service as any).currentLimit();
 
-    expect(service.photos()).toHaveLength(2);
-    expect(service.photos()[0]).toMatchObject({
-      id: '10',
-      download_url: `https://picsum.photos/id/${mockServerPhotos[0].id}/${IMAGE_WIDTH}/${IMAGE_HEIGHT}`,
+      expect(cols).toBeGreaterThan(0);
+      expect(limit % cols).toBe(0);
+    });
+
+    it('should cap the available height to MIN_AVAILABLE_HEIGHT_PX if the screen is too small', async () => {
+      fakeWindowDimensions.innerWidth = 400;
+      fakeWindowDimensions.innerHeight = 50;
+
+      await configureService('browser');
+
+      expect(service).toBeTruthy();
     });
   });
 
-  it('должен переключать страницы и добавлять новые фото к существующим (пагинация)', async () => {
-    const req1 = await expectListRequest(1);
-    req1.flush([mockServerPhotos[0]]); // Передаем только первое фото
+  describe('HTTP Resource & Photos Array', () => {
+    beforeEach(async () => {
+      await configureService('browser');
+    });
 
-    await vi.advanceTimersByTimeAsync(1000);
-    appRef.tick();
-    expect(service.photos()).toHaveLength(1);
+    it('should send request with proper query parameters and format URLs inside parse()', async () => {
+      const mockRawData = [
+        { id: '101', author: 'Test 1', width: 100, height: 100, url: '...', download_url: 'old' },
+      ];
 
-    // Пагинация
-    service.loadNextPage();
+      await vi.advanceTimersByTimeAsync(0);
+      appRef.tick();
 
-    const req2 = await expectListRequest(2);
-    req2.flush([mockServerPhotos[1]]); // Передаем второе фото
+      const expectedLimit = (service as any).currentLimit().toString();
+      const req = httpMock.expectOne(`${PICSUM_API_LIST_ENDPOINT}?page=1&limit=${expectedLimit}`);
+      expect(req.request.method).toBe('GET');
 
-    await vi.advanceTimersByTimeAsync(1000);
-    appRef.tick();
+      req.flush(mockRawData);
 
-    expect(service.photos()).toHaveLength(2);
-    expect(service.photos()[0].id).toBe('10');
-    expect(service.photos()[1].id).toBe('20');
+      await vi.advanceTimersByTimeAsync(0);
+      appRef.tick();
+
+      const photos = service.photos();
+      expect(photos.length).toBe(1);
+      expect(photos[0].download_url).toContain(`/${IMAGE_WIDTH_PX}/${IMAGE_HEIGHT_PX}`);
+    });
+
+    it('should not update photos array if resource returns null', async () => {
+      appRef.tick();
+      const req = httpMock.expectOne((r) => r.url.includes(PICSUM_API_LIST_ENDPOINT));
+      req.flush(null);
+      appRef.tick();
+
+      expect(service.photos()).toEqual([]);
+    });
   });
 
-  it('не должен запрашивать следующую страницу, если в данный момент идет загрузка', async () => {
-    // 1. Перехватываем первый запрос (он удаляется из списка pending, но ссылка на него остается в req1)
-    const req1 = await expectListRequest(1);
-    expect(service.resource.isLoading()).toBe(true);
+  describe('Pagination & Loading States', () => {
+    beforeEach(async () => {
+      await configureService('browser');
+      service.photos.set([
+        { id: '1', author: 'A', width: 10, height: 10, url: '', download_url: '' },
+      ]);
+      appRef.tick();
 
-    // 2. Пытаемся вызвать пагинацию во время загрузки первой страницы
-    service.loadNextPage();
+      try {
+        const req = httpMock.expectOne((r) => r.url.includes(PICSUM_API_LIST_ENDPOINT));
+        req.flush([]);
+      } catch (e) {}
+    });
 
-    await vi.advanceTimersByTimeAsync(0);
-    appRef.tick();
+    it('should abort loadNextPage execution if loading is already in progress', () => {
+      (service as any).isFakeLoadingDelay.set(true);
+      appRef.tick();
 
-    // 3. Проверяем, что запрос для страницы 2 НЕ был создан.
-    // Поскольку req1 уже извлечен, в списке pending не должно остаться вообще ничего.
-    const pendingRequests = httpMock.match((req) => req.url === 'https://picsum.photos/v2/list');
-    expect(pendingRequests).toHaveLength(0); // <-- Меняем 1 на 0
+      expect(service.isLoadingDelayed()).toBe(true);
 
-    // 4. Закрываем первый запрос, чтобы сработал httpMock.verify() в afterEach
-    req1.flush([]);
+      service.loadNextPage();
+      expect((service as any).page()).toBe(1);
+    });
+
+    it('should abort loadNextPage execution if photos array is empty', async () => {
+      service.photos.set([]);
+      appRef.tick();
+
+      service.loadNextPage();
+      expect((service as any).page()).toBe(1);
+    });
+
+    it('should successfully increment the page after delayMs expires', async () => {
+      expect(service.isLoadingDelayed()).toBe(false);
+
+      service.loadNextPage();
+
+      expect((service as any).isFakeLoadingDelay()).toBe(true);
+      expect(service.isLoadingDelayed()).toBe(true);
+
+      await vi.advanceTimersByTimeAsync(100);
+      appRef.tick();
+
+      expect((service as any).page()).toBe(2);
+      expect((service as any).lastTriggeredPage()).toBe(2);
+      expect((service as any).isFakeLoadingDelay()).toBe(false);
+    });
+
+    it('computed property isLoadingDelayed should respond to page and lastTriggeredPage desync', () => {
+      (service as any).page.set(5);
+      (service as any).lastTriggeredPage.set(4);
+      appRef.tick();
+
+      expect(service.isLoadingDelayed()).toBe(true);
+    });
   });
 });

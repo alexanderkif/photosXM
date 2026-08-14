@@ -1,13 +1,14 @@
 import { Service, signal, effect, inject } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { Photo } from '../types/types';
+import { STORAGE_KEY_FAVORITES } from '../types/constants';
 
 @Service()
 export class FavoritesService {
-  private readonly STORAGE_KEY = 'favorite_photos';
+  private readonly STORAGE_KEY = STORAGE_KEY_FAVORITES;
 
-  private document = inject(DOCUMENT);
-  private window = this.document.defaultView;
+  private readonly document = inject(DOCUMENT);
+  private readonly window = this.document.defaultView;
 
   private favoritesSignal = signal<Photo[]>([]);
   readonly favorites = this.favoritesSignal.asReadonly();

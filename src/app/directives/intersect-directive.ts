@@ -3,30 +3,35 @@ import {
   ElementRef,
   output,
   afterNextRender,
-  afterEveryRender,
-  OnDestroy,
   input,
+  inject,
+  PLATFORM_ID,
+  DestroyRef,
 } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 
 @Directive({
   selector: '[appIntersectDirective]',
 })
-export class IntersectDirective implements OnDestroy {
+export class IntersectDirective {
   isLoading = input<boolean>(false);
-  appIntersectDirective = output<void>();
+  load = output<void>();
 
-  private observer!: IntersectionObserver;
+  private observer: IntersectionObserver | null = null;
   private isCurrentlyIntersecting = false;
+  private platformId = inject(PLATFORM_ID);
+  private destroyRef = inject(DestroyRef);
+  private el = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  constructor(private el: ElementRef<HTMLElement>) {
-    afterNextRender(() => {
-      this.initIntersectionObserver();
+  constructor() {
+    afterNextRender({
+      read: () => {
+        this.initIntersectionObserver();
+      },
     });
 
-    afterEveryRender(() => {
-      if (this.isCurrentlyIntersecting && !this.isLoading()) {
-        this.appIntersectDirective.emit();
-      }
+    this.destroyRef.onDestroy(() => {
+      this.observer?.disconnect();
     });
   }
 
@@ -35,8 +40,8 @@ export class IntersectDirective implements OnDestroy {
       ([entry]) => {
         this.isCurrentlyIntersecting = entry.isIntersecting;
 
-        if (entry.isIntersecting && !this.isLoading()) {
-          this.appIntersectDirective.emit();
+        if (this.isCurrentlyIntersecting && !this.isLoading()) {
+          this.tryTriggerLoad();
         }
       },
       {
@@ -49,7 +54,16 @@ export class IntersectDirective implements OnDestroy {
     this.observer.observe(this.el.nativeElement);
   }
 
-  ngOnDestroy() {
-    this.observer?.disconnect();
+  private tryTriggerLoad() {
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    const rect = this.el.nativeElement.getBoundingClientRect();
+    const windowHeight = window.innerHeight;
+
+    if (rect.top > windowHeight + 10) {
+      return;
+    }
+
+    this.load.emit();
   }
 }

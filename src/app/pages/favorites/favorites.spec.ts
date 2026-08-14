@@ -13,6 +13,7 @@ describe('Favorites', () => {
   let fixture: ComponentFixture<Favorites>;
 
   beforeEach(async () => {
+    TestBed.resetTestingModule();
     const routerMock = {
       navigate: vi.fn(),
     };

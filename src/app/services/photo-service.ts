@@ -1,64 +1,126 @@
 import { httpResource, HttpResourceRequest } from '@angular/common/http';
-import { Service, signal, effect } from '@angular/core';
+import { signal, effect, inject, computed, PLATFORM_ID, Service } from '@angular/core';
+import { isPlatformBrowser, DOCUMENT } from '@angular/common';
 import { Photo } from '../types/types';
-import { IMAGE_WIDTH, IMAGE_HEIGHT, PAGE_LIMIT } from '../types/constants';
-import { toSignal, toObservable } from '@angular/core/rxjs-interop';
-import { delay, of, switchMap } from 'rxjs';
+import {
+  IMAGE_WIDTH_PX,
+  IMAGE_HEIGHT_PX,
+  PAGE_LIMIT,
+  GRID_MAX_WIDTH_PX,
+  CARD_HEIGHT_PX,
+  CARD_WIDTH_PX,
+  GRID_GAP_PX,
+  GRID_PADDING_PX,
+  HEADER_HEIGHT_PX,
+  MIN_AVAILABLE_HEIGHT_PX,
+  PICSUM_API_LIST_ENDPOINT,
+  PICSUM_IMAGE_URL_PATTERN,
+} from '../types/constants';
+import { SettingsService } from '../services/settings-service';
 
 @Service()
 export class PhotoService {
-  private readonly apiUrl = 'https://picsum.photos/v2/list';
+  private readonly apiUrl = PICSUM_API_LIST_ENDPOINT;
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly document = inject(DOCUMENT);
+  private readonly settings = inject(SettingsService);
 
   private readonly page = signal<number>(1);
+  private readonly currentLimit = signal<number>(PAGE_LIMIT);
   readonly photos = signal<Photo[]>([]);
+
+  private readonly isFakeLoadingDelay = signal<boolean>(false);
+  private readonly lastTriggeredPage = signal<number>(1);
+
+  private calculatedColumns = 1;
+
+  readonly isLoadingDelayed = computed(() => {
+    return (
+      this.isFakeLoadingDelay() ||
+      this.resource.isLoading() ||
+      this.page() !== this.lastTriggeredPage()
+    );
+  });
 
   readonly resource = httpResource(
     (): HttpResourceRequest => ({
       url: this.apiUrl,
       params: {
         page: this.page().toString(),
-        limit: PAGE_LIMIT.toString(),
+        limit: this.currentLimit().toString(),
       },
     }),
     {
-      parse: (data: unknown): Photo[] =>
-        (data as Photo[]).map((photo) => ({
+      parse: (data: unknown): Photo[] => {
+        return (data as Photo[]).map((photo) => ({
           ...photo,
-          download_url: this.optimizeImageUrl(photo.id, IMAGE_WIDTH, IMAGE_HEIGHT),
-        })),
+          download_url: this.optimizeImageUrl(photo.id, IMAGE_WIDTH_PX, IMAGE_HEIGHT_PX),
+        }));
+      },
     },
   );
 
-  // Emulate network delay for visual testing purposes
-  readonly photosDelayed = toSignal(toObservable(this.resource.value).pipe(delay(1000)));
-  readonly isLoadingDelayed = toSignal(
-    toObservable(this.resource.isLoading).pipe(
-      switchMap((isLoading) => {
-        if (isLoading) {
-          return of(true);
-        } else {
-          return of(false).pipe(delay(1000));
-        }
-      }),
-    ),
-    { initialValue: false },
-  );
-
   constructor() {
-    effect(() => {
-      const newPhotos = this.photosDelayed(); // use photos() without delay
-      if (!newPhotos) return;
+    this.calculateInitialLimit();
 
+    effect(() => {
+      const newPhotos = this.resource.value();
+      if (!newPhotos) return;
       this.photos.update((oldPhotos) => [...oldPhotos, ...newPhotos]);
     });
   }
 
+  private calculateInitialLimit(): void {
+    if (!isPlatformBrowser(this.platformId) || !this.document || !this.document.defaultView) {
+      return;
+    }
+
+    const windowRef = this.document.defaultView;
+
+    const paddingTotalPx = GRID_PADDING_PX * 2;
+    const actualWidth = Math.min(windowRef.innerWidth, GRID_MAX_WIDTH_PX);
+    const availableWidth = actualWidth - paddingTotalPx;
+    const availableHeight = Math.max(
+      MIN_AVAILABLE_HEIGHT_PX,
+      windowRef.innerHeight - HEADER_HEIGHT_PX,
+    );
+
+    this.calculatedColumns = Math.max(
+      1,
+      Math.floor((availableWidth + GRID_GAP_PX) / (CARD_WIDTH_PX + GRID_GAP_PX)),
+    );
+
+    const rows = Math.max(
+      1,
+      Math.floor((availableHeight + GRID_GAP_PX) / (CARD_HEIGHT_PX + GRID_GAP_PX)) + 1,
+    );
+
+    const itemsToFillScreen = this.calculatedColumns * rows;
+
+    let optimalLimit = Math.max(PAGE_LIMIT, itemsToFillScreen);
+    const remainder = optimalLimit % this.calculatedColumns;
+    if (remainder !== 0) {
+      optimalLimit += this.calculatedColumns - remainder;
+    }
+    this.currentLimit.set(optimalLimit);
+  }
+
   loadNextPage() {
-    if (this.resource.isLoading()) return;
-    this.page.update((n) => n + 1);
+    if (this.isLoadingDelayed()) return;
+    if (this.photos().length === 0) return;
+
+    //Emulate real-world API, when getting photos. Loading new photos should have a delay from delayMs.
+    this.isFakeLoadingDelay.set(true);
+
+    setTimeout(() => {
+      const nextPage = this.page() + 1;
+      this.lastTriggeredPage.set(nextPage);
+      this.page.set(nextPage);
+      this.isFakeLoadingDelay.set(false);
+    }, this.settings.delayMs());
   }
 
   private optimizeImageUrl(id: string, width: number, height: number): string {
-    return `https://picsum.photos/id/${id}/${width}/${height}`;
+    return `${PICSUM_IMAGE_URL_PATTERN}/${id}/${width}/${height}`;
   }
 }

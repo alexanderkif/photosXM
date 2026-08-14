@@ -1,5 +1,6 @@
 .header {
   display: flex;
+  position: relative;
   flex: 0 0 auto;
   justify-content: space-evenly;
   align-items: center;
@@ -36,6 +37,57 @@
 
     &::after {
       display: none;
+    }
+  }
+
+  .delay-input {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 80px;
+
+    --mat-form-field-container-height: 40px;
+    --mat-form-field-container-vertical-padding: 8px;
+
+    --mdc-outlined-text-field-container-shape: 20px;
+    background-color: var(--mat-sys-surface-container);
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
+
+    .mat-mdc-form-field-infix {
+      min-height: 40px !important;
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+    }
+
+    .mat-mdc-text-field-wrapper {
+      align-items: center;
+    }
+
+    .mdc-floating-label--float-above {
+      transform: translateY(-25px) scale(var(--mat-mdc-form-field-floating-label-scale, 0.75)) !important;
+    }
+
+    input.mat-mdc-input-element {
+      text-align: center;
+      color: var(--mat-sys-on-surface-variant);
+
+      &::-webkit-outer-spin-button,
+      &::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+
+      &[type='number'] {
+        -moz-appearance: textfield;
+      }
+    }
+
+    &:focus-within {
+      box-shadow: 0 0 0 2px var(--mat-sys-primary-container);
     }
   }
 }

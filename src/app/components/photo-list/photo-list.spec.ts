@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { PhotoList } from './photo-list';
 
-describe.only('PhotoList', () => {
+describe('PhotoList', () => {
   let component: PhotoList;
   let fixture: ComponentFixture<PhotoList>;
 
@@ -16,7 +16,7 @@ describe.only('PhotoList', () => {
     await fixture.whenStable();
   });
 
-  it.only('should create', () => {
+  it('should create', () => {
     expect(component).toBeTruthy();
   });
 });

@@ -74,10 +74,10 @@ npm run test:ui
 
 The app intentionally simulates network/API latency for photo loading:
 
-- In `src/app/components/card/card.ts`, the photo card uses a random loading delay:
-  - `Math.random() * 800 + 200` → random delay between 200 and 1000 ms.
-- In `src/app/pages/home/home.ts`, the photo request is delayed for visual loading state:
-  - `delay(1000)` is applied to emulate network delay and show the loader.
+- In `src/app/components/card/card.ts`, the photo card uses a random loading delay based on the `delayMs` setting:
+  - `Math.random() * this.settings.delayMs()`
+- In `src/app/services/photo-service.ts`, the `loadNextPage` method also applies the `delayMs` setting to simulate network delay before fetching the next page of photos.
+
 
 ## Notes
 

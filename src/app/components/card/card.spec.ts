@@ -12,7 +12,6 @@ describe('Card', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      // We removed provideNoopAnimations to avoid the import error
       imports: [Card, MatCardModule],
     }).compileComponents();
 
@@ -92,7 +91,6 @@ describe('Card', () => {
     const nativeElement = fixture.nativeElement as HTMLElement;
     const card = nativeElement.querySelector('mat-card');
 
-    // Check if component renders nothing when photo is undefined (via @if)
     if (!card) {
       expect(nativeElement.textContent?.trim()).toBe('');
     }
@@ -112,7 +110,6 @@ describe('Card', () => {
     fixture.detectChanges();
     await fixture.whenStable();
 
-    // Manually trigger the click to verify the signal's current value
     component.onCardClick(component.photo()!);
 
     expect(emitSpy).toHaveBeenCalledWith(newPhoto);

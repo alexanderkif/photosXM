@@ -1,26 +1,53 @@
-import { ElementRef } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Component, PLATFORM_ID, signal } from '@angular/core';
+import { TestBed, ComponentFixture } from '@angular/core/testing';
+import { vi, describe, beforeEach, afterEach, it, expect } from 'vitest';
 import { IntersectDirective } from './intersect-directive';
 
+@Component({
+  standalone: true,
+  imports: [IntersectDirective],
+  template: `
+    <div appIntersectDirective (load)="intersectTriggered()" [isLoading]="isLoading()"></div>
+  `,
+})
+class TestHostComponent {
+  isLoading = signal(false);
+  intersectTriggered = vi.fn();
+}
+
 describe('IntersectDirective', () => {
+  let fixture: ComponentFixture<TestHostComponent>;
+  let component: TestHostComponent;
+  let directiveEl: HTMLElement;
+  let mockObserverInstance: MockIntersectionObserver | null = null;
+
   class MockIntersectionObserver {
-    public static instances: MockIntersectionObserver[] = [];
     public observe = vi.fn();
     public disconnect = vi.fn();
-    public unobserve = vi.fn();
 
     constructor(public readonly callback: IntersectionObserverCallback) {
-      MockIntersectionObserver.instances.push(this);
+      mockObserverInstance = this;
     }
   }
 
+  async function configureDirective(platform: 'browser' | 'server' = 'browser') {
+    TestBed.resetTestingModule();
+
+    await TestBed.configureTestingModule({
+      imports: [TestHostComponent, IntersectDirective],
+      providers: [{ provide: PLATFORM_ID, useValue: platform }],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(TestHostComponent);
+    component = fixture.componentInstance;
+    directiveEl = fixture.nativeElement.querySelector('div');
+
+    fixture.detectChanges();
+  }
+
   beforeEach(() => {
-    MockIntersectionObserver.instances = [];
-    vi.stubGlobal(
-      'IntersectionObserver',
-      MockIntersectionObserver as unknown as typeof IntersectionObserver,
-    );
+    mockObserverInstance = null;
+    vi.stubGlobal('IntersectionObserver', MockIntersectionObserver);
   });
 
   afterEach(() => {
@@ -28,57 +55,91 @@ describe('IntersectDirective', () => {
     vi.restoreAllMocks();
   });
 
-  it('should create an instance', () => {
-    const mockElementRef = {
-      nativeElement: document.createElement('div'),
-    } as ElementRef<HTMLElement>;
+  describe('Initialization and Lifecycle', () => {
+    it('should create directive instance and start observing', async () => {
+      await configureDirective('browser');
 
-    const directive = TestBed.runInInjectionContext(() => new IntersectDirective(mockElementRef));
+      expect(mockObserverInstance).toBeTruthy();
+      expect(mockObserverInstance?.observe).toHaveBeenCalledWith(directiveEl);
+    });
 
-    expect(directive).toBeTruthy();
+    it('should disconnect from observer when component is destroyed', async () => {
+      await configureDirective('browser');
+
+      fixture.destroy();
+
+      expect(mockObserverInstance?.disconnect).toHaveBeenCalled();
+    });
   });
 
-  const waitForNextRender = async () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+  describe('Trigger logic in browser', () => {
+    beforeEach(async () => {
+      await configureDirective('browser');
+    });
 
-  it('should initialize observer and observe the element', async () => {
-    const mockElementRef = {
-      nativeElement: document.createElement('div'),
-    } as ElementRef<HTMLElement>;
+    it('should emit event if element intersects screen, loading is not active and geometry is correct', () => {
+      vi.spyOn(directiveEl, 'getBoundingClientRect').mockReturnValue({
+        top: 100,
+        bottom: 200,
+      } as DOMRect);
 
-    const directive = TestBed.runInInjectionContext(() => new IntersectDirective(mockElementRef));
-    await waitForNextRender();
+      mockObserverInstance?.callback(
+        [{ isIntersecting: true } as IntersectionObserverEntry],
+        mockObserverInstance as unknown as IntersectionObserver,
+      );
 
-    expect(MockIntersectionObserver.instances).toHaveLength(1);
-    expect(MockIntersectionObserver.instances[0].observe).toHaveBeenCalledWith(
-      mockElementRef.nativeElement,
-    );
+      expect(component.intersectTriggered).toHaveBeenCalled();
+    });
+
+    it('should not emit event if element does not intersect screen', () => {
+      mockObserverInstance?.callback(
+        [{ isIntersecting: false } as IntersectionObserverEntry],
+        mockObserverInstance as unknown as IntersectionObserver,
+      );
+
+      expect(component.intersectTriggered).not.toHaveBeenCalled();
+    });
+
+    it('should not emit event if loading is currently active', () => {
+      component.isLoading.set(true);
+      fixture.detectChanges();
+
+      mockObserverInstance?.callback(
+        [{ isIntersecting: true } as IntersectionObserverEntry],
+        mockObserverInstance as unknown as IntersectionObserver,
+      );
+
+      expect(component.intersectTriggered).not.toHaveBeenCalled();
+    });
+
+    it('should ignore false trigger if top boundary of element is below screen height', () => {
+      const windowHeight = window.innerHeight;
+      vi.spyOn(directiveEl, 'getBoundingClientRect').mockReturnValue({
+        top: windowHeight + 50,
+      } as DOMRect);
+
+      mockObserverInstance?.callback(
+        [{ isIntersecting: true } as IntersectionObserverEntry],
+        mockObserverInstance as unknown as IntersectionObserver,
+      );
+
+      expect(component.intersectTriggered).not.toHaveBeenCalled();
+    });
   });
 
-  it('should emit when the element becomes intersecting and disconnect on destroy', async () => {
-    const mockElementRef = {
-      nativeElement: document.createElement('div'),
-    } as ElementRef<HTMLElement>;
+  describe('Boundary conditions (SSR)', () => {
+    it('should exit tryTriggerLoad and skip geometry check if on server', async () => {
+      await configureDirective('server');
 
-    const directive = TestBed.runInInjectionContext(() => new IntersectDirective(mockElementRef));
-    const emitSpy = vi.fn();
-    directive.appIntersectDirective.subscribe(emitSpy);
+      const spyBounds = vi.spyOn(directiveEl, 'getBoundingClientRect');
 
-    await waitForNextRender();
-    const observer = MockIntersectionObserver.instances[0];
+      mockObserverInstance?.callback(
+        [{ isIntersecting: true } as IntersectionObserverEntry],
+        mockObserverInstance as unknown as IntersectionObserver,
+      );
 
-    observer.callback(
-      [{ isIntersecting: true } as IntersectionObserverEntry],
-      {} as IntersectionObserver,
-    );
-    expect(emitSpy).toHaveBeenCalledTimes(1);
-
-    observer.callback(
-      [{ isIntersecting: false } as IntersectionObserverEntry],
-      {} as IntersectionObserver,
-    );
-    expect(emitSpy).toHaveBeenCalledTimes(1);
-
-    directive.ngOnDestroy();
-    expect(observer.disconnect).toHaveBeenCalledTimes(1);
+      expect(spyBounds).not.toHaveBeenCalled();
+      expect(component.intersectTriggered).not.toHaveBeenCalled();
+    });
   });
 });

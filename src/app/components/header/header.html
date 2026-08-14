@@ -11,4 +11,15 @@
   <button mat-stroked-button routerLink="/favorites" routerLinkActive="active-link">
     Favorites
   </button>
+
+  <mat-form-field appearance="outline" subscriptSizing="dynamic" class="delay-input">
+    <mat-label>delay, ms</mat-label>
+    <input
+      matInput
+      type="number"
+      min="0"
+      [value]="settings.delayMs()"
+      (change)="settings.delayMs.set($event.target.valueAsNumber)"
+    />
+  </mat-form-field>
 </mat-toolbar>
